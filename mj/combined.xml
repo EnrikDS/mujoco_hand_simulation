@@ -6,11 +6,9 @@
   <include file="../assets/allegro/right_hand_defaults.xml"/>
 
   <!-- Assets: envueltos UNA sola vez aquí -->
-  <asset>
-    <include file="../assets/ur10e/ur10e_assets.xml"/>
-    <include file="../assets/allegro/right_hand_assets.xml"/>
-  </asset>
-
+  <include file="../assets/ur10e/ur10e_assets.xml"/>
+  <include file="../assets/allegro/right_hand_assets.xml"/>
+    
   <worldbody>
     <body name="robot_root" pos="0 0 0">
       <include file="../assets/ur10e/ur10e_body.xml"/>
@@ -25,8 +23,7 @@
   </equality>
 
   <!-- Actuators: envueltos UNA vez aquí -->
-  <actuator>
-    <include file="../assets/ur10e/ur10e_actuators.xml"/>
-    <include file="../assets/allegro/right_hand_actuators.xml"/>
-  </actuator>
+    <include file="../assets/ur10e/ur10e_actuators.xml"/> 
+    <include file="../assets/allegro/right_hand_actuators.xml"/> 
+
 </mujoco>
