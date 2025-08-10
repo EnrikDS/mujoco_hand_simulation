@@ -1,0 +1,8 @@
+<default>
+  <default class="allegro">
+    <joint damping="0.1"/>
+    <position kp="1"/>
+    <geom density="800"/>
+    <site size="0.003" rgba="0.9 0.3 0.3 0.3"/>
+  </default>
+</default>

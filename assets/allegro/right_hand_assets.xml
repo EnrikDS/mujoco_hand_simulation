@@ -1,0 +1,16 @@
+<material name="hand_material" rgba="0.8 0.8 0.8 1"/>
+
+<mesh name="base_link"        file="allegro/assets/base_link.stl"/>
+<mesh name="base_link_left"   file="allegro/assets/base_link_left.stl"/>
+<mesh name="link_0_0"         file="allegro/assets/link_0.0.stl"/>
+<mesh name="link_1_0"         file="allegro/assets/link_1.0.stl"/>
+<mesh name="link_2_0"         file="allegro/assets/link_2.0.stl"/>
+<mesh name="link_3_0"         file="allegro/assets/link_3.0.stl"/>
+<mesh name="link_3_0_tip"     file="allegro/assets/link_3.0_tip.stl"/>
+<mesh name="link_4_0"         file="allegro/assets/link_4.0.stl"/>
+<mesh name="link_12_0_left"   file="allegro/assets/link_12.0_left.stl"/>
+<mesh name="link_12_0_right"  file="allegro/assets/link_12.0_right.stl"/>
+<mesh name="link_13_0"        file="allegro/assets/link_13.0.stl"/>
+<mesh name="link_14_0"        file="allegro/assets/link_14.0.stl"/>
+<mesh name="link_15_0"        file="allegro/assets/link_15.0.stl"/>
+<mesh name="link_15_0_tip"    file="allegro/assets/link_15.0_tip.stl"/>

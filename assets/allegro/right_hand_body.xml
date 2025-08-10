@@ -1,0 +1,91 @@
+<body name="palm" quat="0 1 0 1" childclass="allegro">
+  <geom type="mesh" mesh="base_link" material="hand_material"/>
+
+  <!-- Index / First finger -->
+  <body name="ff_base" pos="0 0.0435 -0.001542" quat="0.999048 -0.0436194 0 0">
+    <joint name="ffj0" axis="0 0 1" range="-0.47 0.47"/>
+    <geom type="mesh" mesh="link_0_0" material="hand_material"/>
+    <body name="ff_proximal" pos="0 0 0.0164">
+      <joint name="ffj1" axis="0 1 0" range="-0.196 1.61"/>
+      <geom type="mesh" mesh="link_1_0" material="hand_material"/>
+      <body name="ff_medial" pos="0 0 0.054">
+        <joint name="ffj2" axis="0 1 0" range="-0.174 1.709"/>
+        <geom type="mesh" mesh="link_2_0" material="hand_material"/>
+        <body name="ff_distal" pos="0 0 0.0384">
+          <joint name="ffj3" axis="0 1 0" range="-0.227 1.618"/>
+          <geom type="mesh" mesh="link_3_0" material="hand_material"/>
+          <body name="ff_tip">
+            <geom type="mesh" mesh="link_3_0_tip" material="hand_material"/>
+            <site name="ff_tip_site" pos="0 0 0.0267"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </body>
+
+  <!-- Middle -->
+  <body name="mf_base" pos="0 0 0.0007">
+    <joint name="mfj0" axis="0 0 1" range="-0.47 0.47"/>
+    <geom type="mesh" mesh="link_0_0" material="hand_material"/>
+    <body name="mf_proximal" pos="0 0 0.0164">
+      <joint name="mfj1" axis="0 1 0" range="-0.196 1.61"/>
+      <geom type="mesh" mesh="link_1_0" material="hand_material"/>
+      <body name="mf_medial" pos="0 0 0.054">
+        <joint name="mfj2" axis="0 1 0" range="-0.174 1.709"/>
+        <geom type="mesh" mesh="link_2_0" material="hand_material"/>
+        <body name="mf_distal" pos="0 0 0.0384">
+          <joint name="mfj3" axis="0 1 0" range="-0.227 1.618"/>
+          <geom type="mesh" mesh="link_3_0" material="hand_material"/>
+          <body name="mf_tip">
+            <geom type="mesh" mesh="link_3_0_tip" material="hand_material"/>
+            <site name="mf_tip_site" pos="0 0 0.0267"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </body>
+
+  <!-- Ring -->
+  <body name="rf_base" pos="0 -0.0435 -0.001542" quat="0.999048 0.0436194 0 0">
+    <joint name="rfj0" axis="0 0 1" range="-0.47 0.47"/>
+    <geom type="mesh" mesh="link_0_0" material="hand_material"/>
+    <body name="rf_proximal" pos="0 0 0.0164">
+      <joint name="rfj1" axis="0 1 0" range="-0.196 1.61"/>
+      <geom type="mesh" mesh="link_1_0" material="hand_material"/>
+      <body name="rf_medial" pos="0 0 0.054">
+        <joint name="rfj2" axis="0 1 0" range="-0.174 1.709"/>
+        <geom type="mesh" mesh="link_2_0" material="hand_material"/>
+        <body name="rf_distal" pos="0 0 0.0384">
+          <joint name="rfj3" axis="0 1 0" range="-0.227 1.618"/>
+          <geom type="mesh" mesh="link_3_0" material="hand_material"/>
+          <body name="rf_tip">
+            <geom type="mesh" mesh="link_3_0_tip" material="hand_material"/>
+            <site name="rf_tip_site" pos="0 0 0.0267"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </body>
+
+  <!-- Thumb -->
+  <body name="th_base" pos="-0.0182 0.019333 -0.045987" quat="0.477714 -0.521334 -0.521334 -0.477714">
+    <joint name="thj0" axis="-1 0 0" range="0.263 1.396"/>
+    <geom type="mesh" mesh="link_12_0_right" material="hand_material"/>
+    <body name="th_proximal" pos="-0.027 0.005 0.0399">
+      <joint name="thj1" axis="0 0 1" range="-0.105 1.163"/>
+      <geom type="mesh" mesh="link_13_0" material="hand_material"/>
+      <body name="th_medial" pos="0 0 0.0177">
+        <joint name="thj2" axis="0 1 0" range="-0.189 1.644"/>
+        <geom type="mesh" mesh="link_14_0" material="hand_material"/>
+        <body name="th_distal" pos="0 0 0.0514">
+          <joint name="thj3" axis="0 1 0" range="-0.162 1.719"/>
+          <geom type="mesh" mesh="link_15_0" material="hand_material"/>
+          <body name="th_tip">
+            <geom type="mesh" mesh="link_15_0_tip" material="hand_material"/>
+            <site name="th_tip_site" pos="0 0 0.035"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </body>
+</body>

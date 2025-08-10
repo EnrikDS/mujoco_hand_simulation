@@ -1,0 +1,32 @@
+<mujoco model="ur10e_with_allegro">
+  <compiler angle="radian" autolimits="true" meshdir="../assets"/>
+
+  <!-- Defaults -->
+  <include file="../assets/ur10e/ur10e_defaults.xml"/>
+  <include file="../assets/allegro/right_hand_defaults.xml"/>
+
+  <!-- Assets: envueltos UNA sola vez aquí -->
+  <asset>
+    <include file="../assets/ur10e/ur10e_assets.xml"/>
+    <include file="../assets/allegro/right_hand_assets.xml"/>
+  </asset>
+
+  <worldbody>
+    <body name="robot_root" pos="0 0 0">
+      <include file="../assets/ur10e/ur10e_body.xml"/>
+      <body name="palm_base" pos="0 0 0">
+        <include file="../assets/allegro/right_hand_body.xml"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <equality>
+    <weld body1="wrist_3_link" body2="palm" solimp="0.99 0.99 0.01" solref="0.01 1"/>
+  </equality>
+
+  <!-- Actuators: envueltos UNA vez aquí -->
+  <actuator>
+    <include file="../assets/ur10e/ur10e_actuators.xml"/>
+    <include file="../assets/allegro/right_hand_actuators.xml"/>
+  </actuator>
+</mujoco>
