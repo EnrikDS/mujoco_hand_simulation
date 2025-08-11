@@ -1,29 +1,32 @@
 <mujoco model="ur10e_with_allegro">
   <compiler angle="radian" autolimits="true" meshdir="../assets"/>
-
+  <option integrator="implicitfast"/>
   <!-- Defaults -->
   <include file="../assets/ur10e/ur10e_defaults.xml"/>
   <include file="../assets/allegro/right_hand_defaults.xml"/>
 
   <!-- Assets: envueltos UNA sola vez aquí -->
-  <include file="../assets/ur10e/ur10e_assets.xml"/>
-  <include file="../assets/allegro/right_hand_assets.xml"/>
+  <!--<include file="../assets/ur10e/ur10e_assets.xml"/>
+  <include file="../assets/allegro/right_hand_assets.xml"/>-->
     
   <worldbody>
+     <body name="world_frame" pos="0 0 0">
+    <site name="world_axis" pos="0 0 0" size="0.01" rgba="1 1 1 0"/>
+    </body>
     <body name="robot_root" pos="0 0 0">
       <include file="../assets/ur10e/ur10e_body.xml"/>
       <body name="palm_base" pos="0 0 0">
-        <include file="../assets/allegro/right_hand_body.xml"/>
-      </body>
+      <include file="../assets/allegro/right_hand_body.xml"/>
+      </body> 
     </body>
   </worldbody>
 
+  
   <equality>
-    <weld body1="wrist_3_link" body2="palm" solimp="0.99 0.99 0.01" solref="0.01 1"/>
+    <weld body1="wrist_3_link" body2="palm" solimp="0.99 0.99 0.01" solref="0.001 1"/>
   </equality>
-
-  <!-- Actuators: envueltos UNA vez aquí -->
+  
+  <!-- Actuators -->
     <include file="../assets/ur10e/ur10e_actuators.xml"/> 
-    <include file="../assets/allegro/right_hand_actuators.xml"/> 
-
+    <include file="../assets/allegro/right_hand_actuators.xml"/>
 </mujoco>

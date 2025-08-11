@@ -1,8 +1,5 @@
 <mujoco model="ur10e">
-  <compiler angle="radian" meshdir="assets" autolimits="true"/>
-
   <option integrator="implicitfast"/>
-
   <default>
     <default class="ur10e">
       <material specular="0.5" shininess="0.25"/>
@@ -44,31 +41,32 @@
     <material class="ur10e" name="linkgray" rgba="0.82 0.82 0.82 1"/>
     <material class="ur10e" name="urblue" rgba="0.49 0.678 0.8 1"/>
 
-    <mesh file="base_0.obj"/>
-    <mesh file="base_1.obj"/>
-    <mesh file="shoulder_0.obj"/>
-    <mesh file="shoulder_1.obj"/>
-    <mesh file="shoulder_2.obj"/>
-    <mesh file="upperarm_0.obj"/>
-    <mesh file="upperarm_1.obj"/>
-    <mesh file="upperarm_2.obj"/>
-    <mesh file="upperarm_3.obj"/>
-    <mesh file="forearm_0.obj"/>
-    <mesh file="forearm_1.obj"/>
-    <mesh file="forearm_2.obj"/>
-    <mesh file="forearm_3.obj"/>
-    <mesh file="wrist1_0.obj"/>
-    <mesh file="wrist1_1.obj"/>
-    <mesh file="wrist1_2.obj"/>
-    <mesh file="wrist2_0.obj"/>
-    <mesh file="wrist2_1.obj"/>
-    <mesh file="wrist2_2.obj"/>
-    <mesh file="wrist3.obj"/>
+    <mesh file="../ur10e/assets/base_0.obj"/>
+    <mesh file="../ur10e/assets/base_1.obj"/>
+    <mesh file="../ur10e/assets/shoulder_0.obj"/>
+    <mesh file="../ur10e/assets/shoulder_1.obj"/>
+    <mesh file="../ur10e/assets/shoulder_2.obj"/>
+    <mesh file="../ur10e/assets/upperarm_0.obj"/>
+    <mesh file="../ur10e/assets/upperarm_1.obj"/>
+    <mesh file="../ur10e/assets/upperarm_2.obj"/>
+    <mesh file="../ur10e/assets/upperarm_3.obj"/>
+    <mesh file="../ur10e/assets/forearm_0.obj"/>
+    <mesh file="../ur10e/assets/forearm_1.obj"/>
+    <mesh file="../ur10e/assets/forearm_2.obj"/>
+    <mesh file="../ur10e/assets/forearm_3.obj"/>
+    <mesh file="../ur10e/assets/wrist1_0.obj"/>
+    <mesh file="../ur10e/assets/wrist1_1.obj"/>
+    <mesh file="../ur10e/assets/wrist1_2.obj"/>
+    <mesh file="../ur10e/assets/wrist2_0.obj"/>
+    <mesh file="../ur10e/assets/wrist2_1.obj"/>
+    <mesh file="../ur10e/assets/wrist2_2.obj"/>
+    <mesh file="../ur10e/assets/wrist3.obj"/>
   </asset>
 
   <worldbody>
     <light name="spotlight" mode="targetbodycom" target="wrist_2_link" pos="0 -1 2"/>
     <body name="base" quat="0 0 0 -1" childclass="ur10e">
+      <site name="base_axis" pos="0 0 0" size="0.01" rgba="1 1 1 0"/>
       <inertial mass="4.0" pos="0 0 0" diaginertia="0.0061063308908 0.0061063308908 0.01125"/>
       <geom mesh="base_0" material="black" class="visual"/>
       <geom mesh="base_1" material="jointgray" class="visual"/>
@@ -115,6 +113,7 @@
                 <geom class="collision" size="0.046 0.065" pos="0 0 0.05"/>
                 <geom class="collision" pos="0 0.028 0.12" quat="1 1 0 0" size="0.046 0.043"/>
                 <body name="wrist_3_link" pos="0 0 0.12">
+                  <site name="wrist_axis" pos="0 0 0" size="0.01" rgba="1 1 1 0"/>
                   <inertial pos="0 0.092 0" quat="0 1 -1 0" mass="0.202"
                     diaginertia="0.000204525 0.000144346 0.000144346"/>
                   <joint name="wrist_3_joint" class="size2"/>
@@ -139,7 +138,4 @@
     <general class="size2" name="wrist_3" joint="wrist_3_joint"/>
   </actuator>
 
-  <keyframe>
-    <key name="home" qpos="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0" ctrl="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0"/>
-  </keyframe>
 </mujoco>
