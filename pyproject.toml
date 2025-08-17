@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mujoco-grasp"        # nombre del paquete distribuible
+version = "0.1.0"
+description = "Mujoco grasp workspace"
+requires-python = ">=3.10"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mujoco_grasp*"]

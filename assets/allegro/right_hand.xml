@@ -131,7 +131,12 @@
 
   <worldbody>
     <body name="palm" pos="-1.184000 -0.388000 0.061000" quat="0.707107 0.707107 0.000000 0.000000" childclass="allegro_right">
-       <site name="palm_axis" pos="0 0 0" size="0.01" rgba="1 1 1 0"/>
+      <site name="palm_axis" pos="0 0 0" size="0.01" rgba="1 1 1 0"/>
+      <site name="palm_grid_site"
+      type="box" size="0.02 0.04 0.002"     
+      pos="0.01 0.0 -0.02"                 
+      quat="0.70710678 0 0.70710678 0"                          
+      rgba="1 0 1 0.5"/>                     
       <joint name="palm_free" type="free"/>
       <geom class="algr_palm_visual"/>
       <geom class="algr_palm_collision"/>
@@ -154,6 +159,11 @@
               <geom class="algr_distal_visual"/>
               <geom class="algr_distal_collision"/>
               <body name="ff_tip">
+                <site name="ff_tip_grid_site"
+                  pos="0 0 0.025"   
+                  quat="1 0 0 0" 
+                  type="sphere" size="0.015"
+                  rgba="1 0 1 0.5"/>
                 <geom class="algr_fingertip_visual"/>
                 <geom class="algr_fingertip_collision"/>
               </body>
@@ -180,6 +190,11 @@
               <geom class="algr_distal_visual"/>
               <geom class="algr_distal_collision"/>
               <body name="mf_tip">
+                <site name="mf_tip_grid_site"
+                  pos="0 0 0.025"   
+                  quat="1 0 0 0" 
+                  type="sphere" size="0.015"
+                  rgba="1 0 1 0.5"/>
                 <geom class="algr_fingertip_visual"/>
                 <geom class="algr_fingertip_collision"/>
               </body>
@@ -206,6 +221,11 @@
               <geom class="algr_distal_visual"/>
               <geom class="algr_distal_collision"/>
               <body name="rf_tip">
+                <site name="rf_tip_grid_site"
+                  pos="0 0 0.025"   
+                  quat="1 0 0 0" 
+                  type="sphere" size="0.015"
+                  rgba="1 0 1 0.5"/>
                 <geom class="algr_fingertip_visual"/>
                 <geom class="algr_fingertip_collision"/>
               </body>
@@ -232,6 +252,11 @@
               <geom class="algr_visual" mesh="link_15.0"/>
               <geom class="algr_thumb_distal_collision"/>
               <body name="th_tip">
+                <site name="th_tip_grid_site"
+                  pos="0 0 0.040"   
+                  quat="1 0 0 0" 
+                  type="sphere" size="0.015"
+                  rgba="1 0 1 0.5"/>
                 <geom class="algr_thumbtip_visual"/>
                 <geom class="algr_thumbtip_collision"/>
               </body>

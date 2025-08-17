@@ -1,5 +1,61 @@
 <mujoco model="ur10e and Allegro hand scene">
-  <compiler angle="radian" meshdir="../assets/" autolimits="true"/>
+  <compiler angle="radian" meshdir="../assets/" autolimits="true" inertiafromgeom="true" balanceinertia="true"/>
+  <extension>
+  <!-- If your Python wheel already ships plugins this line is enough: -->
+  <plugin plugin="mujoco.sensor.touch_grid"/>
+
+  <!-- If you ever see “unknown plugin …touch_grid”, specify the library: -->
+  <!-- <plugin library="libsensor" plugin="mujoco.sensor.touch_grid"/> -->
+</extension>
+  <sensor>
+  <!-- Fingertip grid: 8x8, force channels (Fz, Fx, Fy) -->
+  <plugin name="ff_tip_grid"
+          plugin="mujoco.sensor.touch_grid"
+          objtype="site" objname="ff_tip_grid_site">
+    <config key="nchannel" value="3"/>    <!-- (z, x, y) = normal + two tangents -->
+    <config key="size"     value="20 20"/>  <!-- resolution nx ny -->
+    <config key="fov"      value="180 90"/> <!-- degrees; small ≈ planar patch -->
+    <config key="gamma"    value="0"/>    <!-- foveal deformation (0 = uniform) -->
+  </plugin>
+
+    <plugin name="mf_tip_grid"
+          plugin="mujoco.sensor.touch_grid"
+          objtype="site" objname="mf_tip_grid_site">
+    <config key="nchannel" value="3"/>    <!-- (z, x, y) = normal + two tangents -->
+    <config key="size"     value="20 20"/>  <!-- resolution nx ny -->
+    <config key="fov"      value="180 90"/> <!-- degrees; small ≈ planar patch -->
+    <config key="gamma"    value="0"/>    <!-- foveal deformation (0 = uniform) -->
+  </plugin>
+
+    <plugin name="rf_tip_grid"
+          plugin="mujoco.sensor.touch_grid"
+          objtype="site" objname="rf_tip_grid_site">
+    <config key="nchannel" value="3"/>    <!-- (z, x, y) = normal + two tangents -->
+    <config key="size"     value="20 20"/>  <!-- resolution nx ny -->
+    <config key="fov"      value="180 90"/> <!-- degrees; small ≈ planar patch -->
+    <config key="gamma"    value="0"/>    <!-- foveal deformation (0 = uniform) -->
+  </plugin>
+
+    <plugin name="th_tip_grid"
+          plugin="mujoco.sensor.touch_grid"
+          objtype="site" objname="th_tip_grid_site">
+    <config key="nchannel" value="3"/>    <!-- (z, x, y) = normal + two tangents -->
+    <config key="size"     value="20 20"/>  <!-- resolution nx ny -->
+    <config key="fov"      value="180 90"/> <!-- degrees; small ≈ planar patch -->
+    <config key="gamma"    value="0"/>    <!-- foveal deformation (0 = uniform) -->
+  </plugin>
+
+  <!-- Palm grid: coarser, just normal force to start -->
+  <plugin name="palm_grid"
+          plugin="mujoco.sensor.touch_grid"
+          objtype="site" objname="palm_grid_site">
+    <config key="nchannel" value="3"/>    <!-- just Fz (normal) -->
+    <config key="size"     value="20 40"/> <!-- wider than tall -->
+    <config key="fov"      value="30 30"/>
+    <config key="gamma"    value="0"/>
+  </plugin>
+</sensor>
+
   <include file="../assets/ur10e/ur10e.xml"/>
   <include file="../assets/allegro/right_hand.xml"/> 
   <statistic center="0.4 0 0.4" extent="1"/>
@@ -17,19 +73,38 @@
     <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
   </asset>
 
+  <!-- Soft-ish contact defaults (a little squish & friction) -->
+  <default>
+    <default class="soft_obj">
+      <!-- Contact softness: tune these to taste -->
+      <geom condim="3" solref="0.006 1" solimp="0.8 0.8 0.01"
+            margin="0.002"  
+            friction="1.0 0.2 0.0001"  
+            density="200" rgba="0.9 0.5 0.2 1"/>
+    </default>
+  </default>
+
   <worldbody>
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+    <!-- A small box we'll place above the palm at runtime -->
+    <body name="grocery_box" pos="0 0 1.2">
+      <joint name="grocery_box_free" type="free" damping="0.1"/>
+      <geom name="grocery_geom" class="soft_obj" type="box" mass="0.4" size="0.025 0.035 0.02"/>
+    <!-- half-sizes: 25×35×20 mm -->
+    </body>
   </worldbody>
 
-  <keyframe>
+  <!--<keyframe>
     <key name="home_full"
        qpos="-1.570800 -1.570800 1.570800 -1.570800 -1.570800 0.000000 
              0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 
              0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 
              0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 
-             0.000000 0.000000 0.000000 0.000000 0.000000 "/>
+             0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+             0.000000 0.000000 0.000000 0.000000 0.000000 0.000000"/>
   </keyframe>
+  -->
 
   <equality>
     <weld body1="wrist_3_link" body2="palm" solimp="0.99 0.99 0.01" solref="0.001 1"/>
