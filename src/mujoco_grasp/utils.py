@@ -1,8 +1,7 @@
 import mujoco
 import numpy as np
 import matplotlib.pyplot as plt
-import argparse
-
+import math
 
 
 def site_pose(data: mujoco.MjData, model: mujoco.MjModel, site_name: str):
@@ -71,19 +70,6 @@ def site_pose(data: mujoco.MjData, model: mujoco.MjModel, site_name: str):
     R = data.site_xmat[sid].reshape(3, 3).copy()
     return pos, R
 
-class GridSensorBinding:
-    """Bind a touch_grid sensor by name and validate its shape."""
-    def __init__(self, model, name: str, nchannel: int, nx: int, ny: int):
-        self.name = name
-        sid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SENSOR, name)
-        if sid < 0:
-            raise RuntimeError(f"Sensor '{name}' not found")
-        self.adr = model.sensor_adr[sid]
-        self.dim = model.sensor_dim[sid]
-        self.nchannel, self.nx, self.ny = nchannel, nx, ny
-        need = nchannel * nx * ny
-        if self.dim != need:
-            raise RuntimeError(f"{name}: expected dim {need}, got {self.dim}")
 
 class TimePlot:
     """Rolling time window plot with three curves: Fx, Fy, Fz."""
@@ -127,28 +113,92 @@ class TimePlot:
         self.fig.canvas.draw(); self.fig.canvas.flush_events()
 
 
-def mj_reset_to_qpos(model, data, qpos_full):
-    """Hard reset to a full qpos vector; zero everything; forward."""
-    if len(qpos_full) != model.nq:
-        raise RuntimeError(f"qpos length {len(qpos_full)} != model.nq {model.nq}")
-    data.qpos[:] = qpos_full
-    data.qvel[:] = 0.0
-    data.qacc[:] = 0.0
-    data.ctrl[:] = 0.0
-    mujoco.mj_forward(model, data)
 
-def place_free_body_at_pose(model, data, body_name, pos_w, R_w):
-    """Place a free-jointed body at world pose (pos_w, R_w) and zero its velocities."""
-    bid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, body_name)
-    if bid < 0:
-        raise RuntimeError(f"Body '{body_name}' not found")
-    jadr = model.body_jntadr[bid]
-    if model.jnt_type[jadr] != mujoco.mjtJoint.mjJNT_FREE:
-        raise RuntimeError(f"Body '{body_name}' does not have a free joint")
-    qadr = model.jnt_qposadr[jadr]
-    quat = np.empty(4)
-    mujoco.mju_mat2Quat(quat, R_w.flatten(order='C'))       # accepts 3x3 on 3.3.5
-    data.qpos[qadr:qadr+3]     = pos_w
-    data.qpos[qadr+3:qadr+7]   = quat
-    data.qvel[qadr:qadr+6]     = 0.0
-    mujoco.mj_forward(model, data)
+
+
+class ForceGridPlot:
+    """
+    One Figure with N subplots (one per sensor), each showing Fx, Fy, Fz vs time
+    using a rolling window. Call append(t, values) each update where
+    values is a dict: {label: (Fx, Fy, Fz)}.
+    """
+    def __init__(self, labels, horizon_s: float, dt: float):
+        self.labels = list(labels)
+        self.N = max(200, int(horizon_s / max(1e-6, dt)))
+        self.i = 0
+
+        # ring buffers per sensor
+        self.t  = np.full(self.N, np.nan)
+        self.fx = {k: np.full(self.N, np.nan) for k in self.labels}
+        self.fy = {k: np.full(self.N, np.nan) for k in self.labels}
+        self.fz = {k: np.full(self.N, np.nan) for k in self.labels}
+
+        # layout: up to 3 columns; rows as needed
+        n = len(self.labels)
+        cols = min(3, n)
+        rows = int(math.ceil(n / cols))
+
+        self.fig, axes = plt.subplots(rows, cols, sharex=True, figsize=(4.5*cols, 3.2*rows))
+        if isinstance(axes, np.ndarray):
+            self.axes = axes.ravel()
+        else:
+            self.axes = [axes]
+
+        # create lines per subplot
+        self.lines = {}
+        for ax, label in zip(self.axes, self.labels):
+            ax.set_title(label.upper())
+            ax.set_xlabel("time [s]")
+            ax.set_ylabel("force [N]")
+            (lx,) = ax.plot([], [], label="Fx")
+            (ly,) = ax.plot([], [], label="Fy")
+            (lz,) = ax.plot([], [], label="Fz")
+            ax.legend(loc="upper right")
+            self.lines[label] = (lx, ly, lz)
+
+        # hide any unused axes
+        for j in range(len(self.labels), len(self.axes)):
+            self.axes[j].set_visible(False)
+
+        plt.ion()
+        plt.show(block=False)
+
+    def append(self, t: float, values: dict[str, tuple[float, float, float]]):
+        """values: {label: (Fx, Fy, Fz)}"""
+        k = self.i % self.N
+        self.t[k] = t
+        for label, (Fx, Fy, Fz) in values.items():
+            self.fx[label][k] = Fx
+            self.fy[label][k] = Fy
+            self.fz[label][k] = Fz
+        self.i += 1
+
+    def refresh(self, t_window: float = 10.0):
+        if self.i < 2:
+            return
+        n = min(self.i, self.N)
+        idx = (np.arange(n) + self.i - n) % self.N
+        tt = self.t[idx]
+
+        for label, ax in zip(self.labels, self.axes[:len(self.labels)]):
+            lx, ly, lz = self.lines[label]
+            lx.set_data(tt, self.fx[label][idx])
+            ly.set_data(tt, self.fy[label][idx])
+            lz.set_data(tt, self.fz[label][idx])
+
+            # keep a sliding time window
+            x1 = tt[-1]
+            x0 = max(tt[0], x1 - t_window)
+            ax.set_xlim(x0, x0 + t_window)
+
+            # symmetric y-limits around 0
+            ymax = max(
+                1e-3,
+                np.nanmax(np.abs(self.fx[label][idx])),
+                np.nanmax(np.abs(self.fy[label][idx])),
+                np.nanmax(np.abs(self.fz[label][idx])),
+            )
+            ax.set_ylim(-ymax, ymax)
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()

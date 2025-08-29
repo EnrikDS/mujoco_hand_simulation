@@ -1,6 +1,6 @@
 import mujoco
 
-def bind_grid(model: mujoco.MjModel, name: str, nchannel: int, nx: int, ny: int):
+def bind_grid(model: mujoco.MjModel, name: str, sensor_shape ):
     """
     Look up a MuJoCo touch_grid sensor by name and return everything needed to
     read it efficiently from `data.sensordata`.
@@ -55,6 +55,7 @@ def bind_grid(model: mujoco.MjModel, name: str, nchannel: int, nx: int, ny: int)
     grid = grid_flat.reshape(shape)    # shape = (1, 12, 8)
     Fz = grid[0]                       # normal force map (12×8)
     """
+    nchannel, ny, nx = sensor_shape
     sid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SENSOR, name)
     if sid < 0:
         raise RuntimeError(f"Sensor '{name}' not found")
@@ -65,42 +66,3 @@ def bind_grid(model: mujoco.MjModel, name: str, nchannel: int, nx: int, ny: int)
         raise RuntimeError(f"{name}: expected dim {need}, got {dim}")
     return sid, adr, dim, (nchannel, nx, ny)
 
-class TimePlot:
-    """Rolling time window plot with three curves: Fx, Fy, Fz."""
-    def __init__(self, title: str, horizon_s: float, dt: float):
-        import numpy as np
-        self.N = max(200, int(horizon_s / max(1e-6, dt)))
-        self.t  = np.full(self.N, np.nan)
-        self.fx = np.full(self.N, np.nan)
-        self.fy = np.full(self.N, np.nan)
-        self.fz = np.full(self.N, np.nan)
-        self.i = 0
-
-        self.fig, self.ax = plt.subplots()
-        self.ax.set_title(title)
-        self.ax.set_xlabel("time [s]")
-        self.ax.set_ylabel("force [N]")
-        (self.lx,) = self.ax.plot([], [], label="Fx")
-        (self.ly,) = self.ax.plot([], [], label="Fy")
-        (self.lz,) = self.ax.plot([], [], label="Fz")
-        self.ax.legend(loc="upper right")
-
-    def append(self, t, fx, fy, fz):
-        k = self.i % self.N
-        self.t[k]  = t
-        self.fx[k] = fx
-        self.fy[k] = fy
-        self.fz[k] = fz
-        self.i += 1
-
-    def refresh(self):
-        if self.i < 2:
-            return
-        n = min(self.i, self.N)
-        idx = (np.arange(n) + self.i - n) % self.N
-        tt = self.t[idx]
-        self.lx.set_data(tt, self.fx[idx])
-        self.ly.set_data(tt, self.fy[idx])
-        self.lz.set_data(tt, self.fz[idx])
-        self.ax.relim(); self.ax.autoscale_view()
-        self.fig.canvas.draw(); self.fig.canvas.flush_events()

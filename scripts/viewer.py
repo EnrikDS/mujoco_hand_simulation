@@ -2,14 +2,15 @@
 import os, sys, argparse
 import numpy as np
 import mujoco, mujoco.viewer
-
+import matplotlib.pyplot as plt
+plt.ion()    
+import time                  
+import matplotlib.pyplot as plt           # NEW
 from mujoco_grasp.utils import (
     site_pose,
-    TimePlot,
-    place_free_body_at_pose,
-    mj_reset_to_qpos,
-)
+    ForceGridPlot  )               
 from mujoco_grasp.sensors import bind_grid
+from mujoco_grasp.control import ForceController, FingertipPositionController, TrajectoryGenerator
 
 print("MuJoCo:", mujoco.__version__, "Python:", sys.version)
 
@@ -17,7 +18,13 @@ print("MuJoCo:", mujoco.__version__, "Python:", sys.version)
 parser = argparse.ArgumentParser()
 parser.add_argument("--plot-forces", action="store_true",
                     help="Show live Fx/Fy/Fz time plots (slower).")
+parser.add_argument("--plot-window", type=float, default=10.0,
+                    help="Time window [s] shown in the force plots.")
+parser.add_argument("--active-ui", action="store_true",
+                    help="Use interactive viewer (sliders/keyboard).")
 args = parser.parse_args()
+
+PLOT_WINDOW_S = args.plot_window
 
 # ---------------- Paths ----------------
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -53,6 +60,15 @@ ctrl_hold = None
 desired_qpos = None
 desired_qvel = None
 reset_flag = False
+
+GRID_SPECS = {
+    "palm_grid":   (3, 40, 20),
+    "ff_tip_grid": (3, 20, 20),
+    "mf_tip_grid": (3, 20, 20),
+    "rf_tip_grid": (3, 20, 20),
+    "th_tip_grid": (3, 20, 20),
+}
+
 
 def initialize_control_mapping():
     """Initialize the actuator-to-joint mapping for control"""
@@ -341,63 +357,129 @@ def check_if_reset_needed():
 initialize_control_mapping()
 UR_HOME, HAND_HOME = setup_robot_configuration()
 
+# Initialize force controller for hand torque control
+force_controller = ForceController(model, max_joint_speed=20.0)
+
+# Initialize controller
+controller = FingertipPositionController(model, max_joint_torque=0.5)
+# Initialize trajectory generator  
+traj_gen = TrajectoryGenerator()
+traj_gen.detect_palm_center(data)
+ # Get initial positions
+initial_positions = controller.get_fingertip_positions(data)
+
+# Generate grasp trajectory
+trajectory = traj_gen.generate_grasp_trajectory(initial_positions, grasp_duration=3.0)
+
+# Control loop (this would go in your main simulation loop)
+start_time = data.time + 5
+
+
+    
+
 # ---------------- Optional force plots ----------------
 dt = model.opt.timestep
-sensors = []
+
+plotter = None
+sensor_defs = {}   # name -> dict(adr, dim, shape)
+
 if args.plot_forces:
-    ff_tip_sid, ff_tip_adr, ff_tip_dim, ff_tip_shape = bind_grid(model, "ff_tip_grid", 3, 20, 20)
-    mf_tip_sid, mf_tip_adr, mf_tip_dim, mf_tip_shape = bind_grid(model, "mf_tip_grid", 3, 20, 20)
-    rf_tip_sid, rf_tip_adr, rf_tip_dim, rf_tip_shape = bind_grid(model, "rf_tip_grid", 3, 20, 20)
-    th_tip_sid, th_tip_adr, th_tip_dim, th_tip_shape = bind_grid(model, "th_tip_grid", 3, 20, 20)
-    palm_sid,   palm_adr,   palm_dim,   palm_shape   = bind_grid(model, "palm_grid",   3, 40, 20)
+    # bind once
+    ff_tip_sid, ff_tip_adr, ff_tip_dim, ff_tip_shape = bind_grid(model, "ff_tip_grid", GRID_SPECS["ff_tip_grid"])
+    mf_tip_sid, mf_tip_adr, mf_tip_dim, mf_tip_shape = bind_grid(model, "mf_tip_grid", GRID_SPECS["mf_tip_grid"])
+    rf_tip_sid, rf_tip_adr, rf_tip_dim, rf_tip_shape = bind_grid(model, "rf_tip_grid", GRID_SPECS["rf_tip_grid"])
+    th_tip_sid, th_tip_adr, th_tip_dim, th_tip_shape = bind_grid(model, "th_tip_grid", GRID_SPECS["th_tip_grid"])
+    palm_sid,   palm_adr,   palm_dim,   palm_shape   = bind_grid(model, "palm_grid",   GRID_SPECS["palm_grid"])
 
-    sensors.append({"label":"palm","adr":palm_adr,"dim":palm_dim,"shape":palm_shape,
-                    "plot": TimePlot("Palm (Σ grid forces)", 10.0, dt)})
-    sensors.append({"label":"ff","adr":ff_tip_adr,"dim":ff_tip_dim,"shape":ff_tip_shape,
-                    "plot": TimePlot("FF (Σ grid forces)", 10.0, dt)})
-    sensors.append({"label":"mf","adr":mf_tip_adr,"dim":mf_tip_dim,"shape":mf_tip_shape,
-                    "plot": TimePlot("MF (Σ grid forces)", 10.0, dt)})
-    sensors.append({"label":"rf","adr":rf_tip_adr,"dim":rf_tip_dim,"shape":rf_tip_shape,
-                    "plot": TimePlot("RF (Σ grid forces)", 10.0, dt)})
-    sensors.append({"label":"th","adr":th_tip_adr,"dim":th_tip_dim,"shape":th_tip_shape,
-                    "plot": TimePlot("TH (Σ grid forces)", 10.0, dt)})
+    sensor_defs = {
+        "palm": {"adr": palm_adr, "dim": palm_dim, "shape": palm_shape},
+        "ff":   {"adr": ff_tip_adr, "dim": ff_tip_dim, "shape": ff_tip_shape},
+        "mf":   {"adr": mf_tip_adr, "dim": mf_tip_dim, "shape": mf_tip_shape},
+        "rf":   {"adr": rf_tip_adr, "dim": rf_tip_dim, "shape": rf_tip_shape},
+        "th":   {"adr": th_tip_adr, "dim": th_tip_dim, "shape": th_tip_shape},
+    }
 
+    plotter = ForceGridPlot(labels=list(sensor_defs.keys()),
+                        horizon_s=PLOT_WINDOW_S, dt=dt)
 # ---------------- Viewer loop with robust reset handling ----------------
 STEP_VIS = 10
 k = 0
 
-with mujoco.viewer.launch(model, data) as viewer:
-    viewer.opt.frame = mujoco.mjtFrame.mjFRAME_SITE
-    model.vis.scale.framelength = 0.08
-    model.vis.scale.framewidth  = 0.003
-    
-    # Store initial state for comparison
-    steps_since_last_check = 0
-    
-    while viewer.is_running():
-        # Check for reset every few steps (not every single step for performance)
-        if steps_since_last_check % 5 == 0:
-            if check_if_reset_needed() or reset_flag:
-                reset_to_desired_state()
-        
-        steps_since_last_check += 1
-        
-        # Hold UR + hand at initial pose by feeding actuator targets each step
-        apply_hold_control()
+if args.active_ui:
+    # ---- ACTIVE UI: viewer steps the sim; sliders work ----
+    with mujoco.viewer.launch(model, data) as viewer:
+        viewer.opt.frame = mujoco.mjtFrame.mjFRAME_SITE
+        model.vis.scale.framelength = 0.08
+        model.vis.scale.framewidth  = 0.003
 
-        mujoco.mj_step(model, data)
-        
-        if args.plot_forces:
-            k += 1
-            if k % STEP_VIS == 0:
-                t = data.time
-                for s in sensors:
-                    flat = data.sensordata[s["adr"]: s["adr"]+s["dim"]]
-                    arr  = flat.reshape(s["shape"])
-                    Fz = arr[0].sum()
-                    Fx = arr[1].sum() if arr.shape[0] > 1 else 0.0
-                    Fy = arr[2].sum() if arr.shape[0] > 2 else 0.0
-                    s["plot"].append(t, Fx, Fy, Fz)
-                    s["plot"].refresh()
+        while viewer.is_running():
+            
+            time.sleep(0.2)
+            
+            # keep feeding your hold targets so the arm doesn't drift
+            apply_hold_control()
+            
+            # Apply force control demo if active
+         
 
-        viewer.sync()
+            # no mj_step() here — the viewer is stepping internally
+
+            if args.plot_forces and plotter is not None:
+                k += 1
+                if k % STEP_VIS == 0:
+                    tnow = data.time
+                    values = {}
+                    for label, s in sensor_defs.items():
+                        flat = data.sensordata[s["adr"]: s["adr"] + s["dim"]]
+                        arr  = flat.reshape(s["shape"])
+                        Fz = arr[0].sum()
+                        Fx = arr[1].sum() if arr.shape[0] > 1 else 0.0
+                        Fy = arr[2].sum() if arr.shape[0] > 2 else 0.0
+                        values[label] = (Fx, Fy, Fz)
+                    plotter.append(tnow, values)
+                    plotter.refresh(t_window=PLOT_WINDOW_S)
+                    plt.pause(0.001)
+
+            viewer.sync()
+
+else:
+    # ---- PASSIVE: your loop steps the sim; no UI sliders ----
+    with mujoco.viewer.launch_passive(model, data) as viewer:
+        viewer.opt.frame = mujoco.mjtFrame.mjFRAME_SITE
+        model.vis.scale.framelength = 0.08
+        model.vis.scale.framewidth  = 0.003
+        
+        while viewer.is_running():
+            if (data.time - start_time < 5.0) & (data.time  - start_time > 0.0):  # Run for 3 seconds
+                # Get desired positions at current time
+                t = data.time - start_time
+                desired_pos = trajectory(t)
+                print(f"t={t:.2f}s, desired positions: {desired_pos}")
+                # Apply position control
+                controller.control_to_positions(data, desired_pos)
+            
+            # Step simulation
+            mujoco.mj_step(model, data)
+            
+            # Optional: print progress
+            if int(t * 10) % 10 == 0:  # Every 0.1 seconds
+                current_pos = controller.get_fingertip_positions(data)
+                print(f"t={t:.1f}s - Forefinger at: {current_pos.get('forefinger', [0,0,0])}")
+
+                if args.plot_forces and plotter is not None:
+                    k += 1
+                    if k % STEP_VIS == 0:
+                        tnow = data.time
+                        values = {}
+                        for label, s in sensor_defs.items():
+                            flat = data.sensordata[s["adr"]: s["adr"] + s["dim"]]
+                            arr  = flat.reshape(s["shape"])
+                            Fz = arr[0].sum()
+                            Fx = arr[1].sum() if arr.shape[0] > 1 else 0.0
+                            Fy = arr[2].sum() if arr.shape[0] > 2 else 0.0
+                            values[label] = (Fx, Fy, Fz)
+                        plotter.append(tnow, values)
+                        plotter.refresh(t_window=PLOT_WINDOW_S)
+                        plt.pause(0.001)
+
+            viewer.sync()

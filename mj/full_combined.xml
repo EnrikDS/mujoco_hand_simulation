@@ -51,7 +51,7 @@
           objtype="site" objname="palm_grid_site">
     <config key="nchannel" value="3"/>    <!-- just Fz (normal) -->
     <config key="size"     value="20 40"/> <!-- wider than tall -->
-    <config key="fov"      value="30 30"/>
+    <config key="fov"      value="180 90"/>
     <config key="gamma"    value="0"/>
   </plugin>
 </sensor>
